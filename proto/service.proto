@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package service;
+
+import "google/protobuf/empty.proto";
+
+option go_package = "github.com/s02190058/grpc-compare/service";
+
+message UnaryDownloadResponse {
+  string filename = 1;
+  bytes content = 2;
+}
+
+message Chunk {
+  bytes data = 1;
+}
+
+message StreamDownloadResponse {
+  string filename = 1;
+  Chunk chunk = 2;
+}
+
+service Service {
+  rpc UnaryDownload(google.protobuf.Empty) returns(UnaryDownloadResponse) {}
+  rpc StreamDownload(google.protobuf.Empty) returns(stream StreamDownloadResponse) {}
+}
