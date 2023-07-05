@@ -7,3 +7,11 @@ gen:
 .PHONY: tidy
 tidy:
 	go mod tidy
+
+.PHONY: run
+run:
+	go run ./main.go --port=9090
+
+.PHONY: bench
+bench:
+	go test -v -bench=.

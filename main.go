@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	path     = "./server"
+	path     = "./images"
 	filename = "gopher.png"
 )
 
@@ -37,7 +37,7 @@ type ServiceServer struct {
 func (s ServiceServer) UnaryDownload(_ context.Context, _ *emptypb.Empty) (*service.UnaryDownloadResponse, error) {
 	content, err := os.ReadFile(filepath.Join(path, filename))
 	if err != nil {
-		log.Printf("os.ReadFile: %s", err)
+		log.Printf("os.ReadFile: %v", err)
 		return nil, InternalError()
 	}
 
@@ -49,23 +49,22 @@ func (s ServiceServer) UnaryDownload(_ context.Context, _ *emptypb.Empty) (*serv
 func (s ServiceServer) StreamDownload(_ *emptypb.Empty, stream service.Service_StreamDownloadServer) error {
 	file, err := os.Open(filepath.Join(path, filename))
 	if err != nil {
-		log.Printf("os.Open: %s", err)
+		log.Printf("os.Open: %v", err)
 		return InternalError()
 	}
 	buf := make([]byte, chunkSize)
 	for {
 		select {
 		case <-stream.Context().Done():
-			return nil
+			return status.Errorf(codes.Canceled, "disconnect")
 		default:
 			var n int
 			n, err = file.Read(buf)
 			if err != nil {
 				if errors.Is(err, io.EOF) {
 					return nil
-				} else {
-					return InternalError()
 				}
+				return InternalError()
 			}
 
 			if err = stream.Send(&service.StreamDownloadResponse{
@@ -84,14 +83,14 @@ func main() {
 	flag.Parse()
 	lis, err := net.Listen("tcp", ":"+(*port))
 	if err != nil {
-		log.Fatalf("can't create listener: %s", err)
+		log.Fatalf("can't create listener: %v", err)
 	}
 
 	s := grpc.NewServer()
 	srv := &ServiceServer{}
 	service.RegisterServiceServer(s, srv)
-	log.Printf("starting server on %s", *port)
+	log.Printf("starting server on %v", *port)
 	if err = s.Serve(lis); err != nil {
-		log.Fatalf("can't start gPRC server: %s", err)
+		log.Fatalf("can't start gPRC server: %v", err)
 	}
 }
